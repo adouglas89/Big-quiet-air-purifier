@@ -9,3 +9,5 @@ The fan currently requires a large format printer.  Don't buy anything Tronxy, I
 Everything in this repository is going to go out of date as things are changing fast.
 
 Actually making one is something that will become easier as the development is sorted out better.  If it's confusing that's no surprise, manufacturing is never easy, people don't respect it for some reason but they should.
+
+The CAD files for the big quiet fan will also be integrated into this CAD file from now on.  The files in the repository specifically for the big quiet fan will eventually be obsolete unless I update them.
