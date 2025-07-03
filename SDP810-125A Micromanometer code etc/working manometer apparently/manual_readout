@@ -1,0 +1,41 @@
+import utime
+from machine import Pin, SoftI2C, I2C
+import ahtx0
+i2c = I2C(0, scl=Pin(1), sda=Pin(0), freq=40_000)
+i2c2 = I2C(1, scl=Pin(3), sda=Pin(2), freq=40_000)
+i2c3 = SoftI2C(scl=Pin(5), sda=Pin(4), freq=40_000)
+i2c4 = SoftI2C(scl=Pin(7), sda=Pin(6), freq=40_000)
+devices = i2c.scan()
+if devices:
+    for d in devices:
+        print(hex(d))
+        devices = i2c.scan()
+        
+devices = i2c2.scan() 
+if devices:
+    for d in devices:
+        print(hex(d))
+devices = i2c3.scan() 
+if devices:
+    for d in devices:
+        print(hex(d))
+devices = i2c4.scan() 
+if devices:
+    for d in devices:
+        print(hex(d))
+# Create the sensor object using I2C
+sensor = ahtx0.AHT10(i2c)
+sensor2 = ahtx0.AHT10(i2c2)
+sensor3 = ahtx0.AHT10(i2c3)
+sensor4 = ahtx0.AHT10(i2c4)
+while True:
+    print("Temperature1: ", sensor.temperature, " humidity1: ",sensor.relative_humidity)
+    utime.sleep(0.25)
+    print("Temperature2: ", sensor2.temperature, " humidity2: ",sensor2.relative_humidity)
+    utime.sleep(0.25)
+    print("Temperature3: ", sensor3.temperature, " humidity3: ",sensor3.relative_humidity)
+    utime.sleep(0.25)
+    print("Temperature4: ", sensor4.temperature, " humidity4: ",sensor4.relative_humidity)
+    utime.sleep(0.25)
+
+
