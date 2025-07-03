@@ -27,6 +27,14 @@ persistent_vars_dict = {"ssid_main_wifi": "enterssidhere",
                         "ADAFRUIT_IO_FEEDNAME" : b'bqapX_control',
                         "ADAFRUIT_IO_FEEDNAME_publish" : b'bqapX_status',
                         }
+def save_vars():
+    global persistent_vars_dict
+    vars_dict=persistent_vars_dict
+    global_dict_copy = globals()
+    for key in vars_dict:
+        vars_dict[key] = global_dict_copy[key]   
+    with open(persistent_vars_filename, "w") as outfile:
+         json.dump(vars_dict, outfile)
 def set_v(v):
     num_string = f'{v:.3f}'
     padded_num_s = f'{num_string:0<7}'
@@ -301,6 +309,7 @@ print("you have 5 seconds to start the repl before I enable the watchdog")
 sleep(5)
 wdt = WDT(timeout = 8000)
 wdt.feed()
+globals().update(persistent_vars_dict)
 root_files = os.listdir('/')
 if calibration_file_filename not in root_files: # if the file doesn't exist then do calibration and save file
     wdt.feed()
