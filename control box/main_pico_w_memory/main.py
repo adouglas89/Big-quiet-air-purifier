@@ -27,14 +27,6 @@ persistent_vars_dict = {"ssid_main_wifi": "enterssidhere",
                         "ADAFRUIT_IO_FEEDNAME" : b'bqapX_control',
                         "ADAFRUIT_IO_FEEDNAME_publish" : b'bqapX_status',
                         }
-def save_vars():
-    global persistent_vars_dict
-    vars_dict=persistent_vars_dict
-    global_dict_copy = globals()
-    for key in vars_dict:
-        vars_dict[key] = global_dict_copy[key]   
-    with open(persistent_vars_filename, "w") as outfile:
-         json.dump(vars_dict, outfile)
 def set_v(v):
     num_string = f'{v:.3f}'
     padded_num_s = f'{num_string:0<7}'
@@ -104,7 +96,7 @@ def connect_wifi(ssid, password):
         wdt.feed()
         if x>20:
             print("couldn't connect in ", x , " seconds")
-            return None, None 
+            return None, wlan 
     ip=wlan.ifconfig()
     print("connected to wifi, my address is:",ip[0])
     led.off()
@@ -174,8 +166,10 @@ def connect_mqtt():
         client.subscribe(mqtt_feedname)
         wdt.feed()
     return mqtt_connected, client
+mqtt_strikes = 0
 def comm_mqtt(mqtt_connected):
     global perc_filter_health
+    global mqtt_strikes
     if mqtt_connected == 1:
         try:
             sleep(0.1)
@@ -188,8 +182,9 @@ def comm_mqtt(mqtt_connected):
             client.check_msg()
             wdt.feed()
             print("mqtt messages checked ok")
+            mqtt_strikes = 0
         except BaseException as error:
-            print("apparently connected to mqtt but got an error during effort to communicate over mqtt", error)
+            print("got an error during effort to communicate over mqtt", error)
     return
 def check_pot():
     global oldpot_val
@@ -200,7 +195,7 @@ def check_pot():
         return read/655.53
     return oldpot_val/655.53
 def perc_to_voltage(perc):
-    max_voltage = 9
+    max_voltage = 8
     min_voltage = 3
     voltage_out = perc*max_voltage/100
     if voltage_out > max_voltage:
@@ -209,9 +204,11 @@ def perc_to_voltage(perc):
         voltage_out = 0
     return voltage_out   
 def check_wifi_reconnect(ip, wlan):
+    global ssid_main_wifi
+    global password_main_wifi
     try:    
         if wlan.isconnected() == False:
-            ip, wlan = try_connect_forever() 
+            ip, wlan = connect_wifi(ssid_main_wifi,password_main_wifi) 
             return ip, wlan
     except BaseException as error:
             print("error trying to reconnect wifi, probbly it means we are in ap mode if wlan doesn't exist error is:", error)
@@ -220,6 +217,7 @@ def check_wifi_reconnect(ip, wlan):
 def big_connect_mqtt():
     global ADAFRUIT_IO_URL
     global mqtt_connected
+    client = None
     try:
         wdt.feed()
         uping.ping(ADAFRUIT_IO_URL)
@@ -261,6 +259,8 @@ def mwpd_calib_to_perc_flow(mwpd,calib):
         if rps >-5:
             return None #can't get  a valid reading at very low rps levels.
         should_be_mwpd = interpolate_airflow(rps, calib)
+        print(should_be_mwpd)
+        print(mwpd)
         pre_perc_filter_health = 100*mwpd/should_be_mwpd
         perc_filter_health = 100-5*(100-pre_perc_filter_health)
         return perc_filter_health
@@ -309,7 +309,6 @@ print("you have 5 seconds to start the repl before I enable the watchdog")
 sleep(5)
 wdt = WDT(timeout = 8000)
 wdt.feed()
-globals().update(persistent_vars_dict)
 root_files = os.listdir('/')
 if calibration_file_filename not in root_files: # if the file doesn't exist then do calibration and save file
     wdt.feed()
@@ -322,7 +321,9 @@ else:
     restore_vars()
 
 ip = None
-ip, wlan = try_connect_forever()
+wdt.feed()
+ip, wlan = connect_wifi(ssid_main_wifi,password_main_wifi)
+wdt.feed()
 mqtt_connected = 0
 client = big_connect_mqtt()
 with open(calibration_file_filename,"r") as openfile:
@@ -332,38 +333,41 @@ timer2 = 0
 timer3 = 3
 
 while True:
-    if ticks_diff(ticks_ms(),timer3)>1000: 
-        pot_val = check_pot()
-        print("pot_val, percent: ",pot_val)
-        combine_percs(pot_val, mqtt_perc) #puts the result in a global variable main_power_perc
-        wdt.feed()
-        v = perc_to_voltage(main_power_perc)
-        wdt.feed()
-        set_v(v)
-        wdt.feed()
-        sleep(0.05)
-        rps = read_rps()
-        wdt.feed()
-        print("rps: ",rps)
-        timer3 = ticks_ms()
-        #relocate the below later
-        mwpd = anemometer.read_anemometer(wdt) #this takes a long time
-        perc_filter_health = mwpd_calib_to_perc_flow(mwpd,calib)
-        set_pwm_perc(main_power_perc)#this is an a
-        print("apparent percent filter health, remember it is not valid after power changes for a bit:", perc_filter_health)
-    if ticks_diff(ticks_ms(),timer1)>30_000:
-        if wlan.isconnected()==False:
+    try: 
+        if ticks_diff(ticks_ms(),timer3)>1000: 
+            pot_val = check_pot()
+            print("pot_val, percent: ",pot_val)
+            combine_percs(pot_val, mqtt_perc) #puts the result in a global variable main_power_perc
             wdt.feed()
-            ip, wlan = check_wifi_reconnect(ip, wlan)#need to reconnect mqtt if wifi disconnects, probably
+            v = perc_to_voltage(main_power_perc)
             wdt.feed()
-            big_connect_mqtt()
+            set_v(v)
             wdt.feed()
-        if mqtt_connected == 1:
+            sleep(0.05)
+            rps = read_rps()
             wdt.feed()
-            comm_mqtt(mqtt_connected)
-            wdt.feed()
-        timer1 = ticks_ms()
-        
+            print("rps: ",rps)
+            timer3 = ticks_ms()
+            #relocate the below later
+            mwpd = anemometer.read_anemometer(wdt) #this takes a long time
+            perc_filter_health = mwpd_calib_to_perc_flow(mwpd,calib)
+            set_pwm_perc(main_power_perc)#this is an a
+            print("apparent percent filter health, remember it is not valid after power changes for a bit:", perc_filter_health)
+        if ticks_diff(ticks_ms(),timer1)>30_000:
+            if wlan.isconnected()==False:
+                wdt.feed()
+                ip, wlan = check_wifi_reconnect(ip, wlan)#need to reconnect mqtt if wifi disconnects, probably
+                wdt.feed()
+                big_connect_mqtt()
+                wdt.feed()
+            if mqtt_connected == 1:
+                wdt.feed()
+                comm_mqtt(mqtt_connected)
+                wdt.feed()
+            timer1 = ticks_ms()
+            
 
-    if ticks_ms()>86_400_000: #just reset every day in case something stops working.
-        sleep(10)#this should cause the watchdog to reset the system 
+        if ticks_ms()>86_400_000: #just reset every day in case something stops working.
+            sleep(10)#this should cause the watchdog to reset the system 
+    except BaseException as error:
+        print("error during main loop: ",error)
