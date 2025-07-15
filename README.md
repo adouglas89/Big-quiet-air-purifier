@@ -11,3 +11,7 @@ Everything in this repository is going to go out of date as things are changing 
 Actually making one is something that will become easier as the development is sorted out better.  If it's confusing that's no surprise, manufacturing is never easy, people don't respect it for some reason but they should.
 
 The CAD files for the big quiet fan will also be integrated into this CAD file from now on.  The files in the repository specifically for the big quiet fan will eventually be obsolete unless I update them.
+
+
+here is the bom: https://docs.google.com/spreadsheets/d/1DK419Db4-yF4lkq_DYZrtrG0oX9ysA3eVCCv0GqU3Kw/edit?usp=sharing
+it is changing rapidly so I don't really want to upload it as a static document, and there seems to be no way to have a spreadsheet on github.  When things stabilize I will put it here.
