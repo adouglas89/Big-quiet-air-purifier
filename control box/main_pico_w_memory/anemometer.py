@@ -48,17 +48,21 @@ def check_unpowered_temp(unpowered_therm_adc):
     global R0_unpowered 
     global T0_unpowered 
     global current_unpowered
-    unpowered_pin1.on()
-    unpowered_pin2.on()
-    sleep(0.05)
-    voltage_unpowered_sense = (unpowered_therm_adc.read_u16()/65356)*3.3
-    unpowered_pin1.off()
-    unpowered_pin2.off()
-    current_unpowered = voltage_unpowered_sense/(sense_r_unpowered)
-    total_resistance_unpowered = unpowered_supply_v/current_unpowered
-    therm_r_unpowered = total_resistance_unpowered-resistance_current_limit_unpowered
-    voltage_therm_unpowered = unpowered_supply_v*(therm_r_unpowered/total_resistance_unpowered)
-    T_unpowered = beta_unpowered/log(therm_r_unpowered/(R0_unpowered*(e**(-1*beta_unpowered/T0_unpowered)))) #remember this is in kelvin not celcius
+    try:
+        unpowered_pin1.on()
+        unpowered_pin2.on()
+        sleep(0.05)
+        voltage_unpowered_sense = (unpowered_therm_adc.read_u16()/65356)*3.3
+        unpowered_pin1.off()
+        unpowered_pin2.off()
+        current_unpowered = voltage_unpowered_sense/(sense_r_unpowered)
+        total_resistance_unpowered = unpowered_supply_v/current_unpowered
+        therm_r_unpowered = total_resistance_unpowered-resistance_current_limit_unpowered
+        voltage_therm_unpowered = unpowered_supply_v*(therm_r_unpowered/total_resistance_unpowered)
+        T_unpowered = beta_unpowered/log(therm_r_unpowered/(R0_unpowered*(e**(-1*beta_unpowered/T0_unpowered)))) #remember this is in kelvin not celcius
+    except BaseException as error:
+        print(error,"maybe anemometer is not connected")
+        return None
     return T_unpowered
 
 last_t_above_ambient = 0
@@ -69,27 +73,31 @@ def mw_per_degree_diff(T_unpowered, T_powered, therm_powered_power):
     return ratio
 
 def read_anemometer(wdt):
-    measures = 50
-    measures_unpowered = 50
-    mwperdegsum=0
-    t_accum = 0
-    wdt.feed()
-    T_unpowered = check_unpowered_temp(unpowered_therm_adc)
-    wdt.feed()
-    for i in range(0,measures_unpowered):
-        sleep(0.005)
+    try:
+        measures = 50
+        measures_unpowered = 50
+        mwperdegsum=0
+        t_accum = 0
         wdt.feed()
         T_unpowered = check_unpowered_temp(unpowered_therm_adc)
-        t_accum = t_accum + T_unpowered
-    T_unpowered = t_accum/measures_unpowered
-    for i in range(0,measures):
-        sleep(0.01)
         wdt.feed()
-        T_powered, therm_powered_power = check_powered_temp(powered_therm_adc)
-        mwperdeg = mw_per_degree_diff(T_unpowered, T_powered, therm_powered_power)
-        mwperdegsum += mwperdeg
-    average_mw_per_deg = mwperdegsum/measures
-    print("raw anemometer reading, mw per degree: ",average_mw_per_deg)
+        for i in range(0,measures_unpowered):
+            sleep(0.005)
+            wdt.feed()
+            T_unpowered = check_unpowered_temp(unpowered_therm_adc)
+            t_accum = t_accum + T_unpowered
+        T_unpowered = t_accum/measures_unpowered
+        for i in range(0,measures):
+            sleep(0.01)
+            wdt.feed()
+            T_powered, therm_powered_power = check_powered_temp(powered_therm_adc)
+            mwperdeg = mw_per_degree_diff(T_unpowered, T_powered, therm_powered_power)
+            mwperdegsum += mwperdeg
+        average_mw_per_deg = mwperdegsum/measures
+        print("raw anemometer reading, mw per degree: ",average_mw_per_deg)
+    except BaseException as error:
+        print(error,"maybe anemometer is not connected")
+        return None
     return average_mw_per_deg
 
     
