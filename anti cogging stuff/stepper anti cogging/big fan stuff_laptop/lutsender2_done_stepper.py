@@ -69,7 +69,7 @@ def send_lut(lut):
          json.dump(lut, file)
     return lut
 if __name__ == "__main__":    #not clear this works this is so it doesn't run on import, but you can run this file to test it directly.
-    with open("test_lut.json", "r") as file:
+    with open("best_lut.json", "r") as file:
         lut = json.load(file)
     send_lut(lut)
     while True:

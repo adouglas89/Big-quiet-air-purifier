@@ -1,7 +1,6 @@
 import json
 import time
 import random
-import numpy as np
 from deap import base, creator, tools, algorithms
 from datetime import datetime
 import os
@@ -14,12 +13,10 @@ starting_rpm = read_rpm() #it's actually rads per second oh well
 def obj_func(lut, mic, rpm): # lut is in the form of a list.
     global starting_rpm
     mic_noise_floor = 3000
-    lut_sum = 0
-    for i in lut:
-        lut_sum = lut_sum+i # net deviation from zero, waves whose peak and trough cancel out dont' contribute to this sum
-    lut_offset_size = abs(lut_sum) #negative or positive net offset of average voltage counts the same
-    print("lut_sum:", lut_sum)
-    value = (mic-mic_noise_floor)*10+lut_offset_size*30 # mic minus X is because it reads 4366 when quiet so reduce noise by subtracting that, check the values are reasonabl efor this linerpm is minus because it's going that direction but minus a negative. The lut sum term is to try to reduce any tendency to produce a net voltage offset/keep it to the minimum mods.
+    dc_pen = abs(np.mean(lut))*500
+    print("dc_pen:", dc_pen)
+    print("mic-noise_floor:", mic-mic_noise_floor)
+    value = (mic-mic_noise_floor)*10+dc_pen # mic minus X is because it reads 4366 when quiet so reduce noise by subtracting that, check the values are reasonabl efor this linerpm is minus because it's going that direction but minus a negative. The lut sum term is to try to reduce any tendency to produce a net voltage offset/keep it to the minimum mods.
     print("obj func evaluates to:",value)
     return value
 tests = 0
@@ -35,10 +32,9 @@ creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMin)
 
 toolbox = base.Toolbox()
-toolbox.register("attr_float", random.uniform, -1, 1)  # Adjust range if needed
+toolbox.register("attr_float", random.uniform, 0, 0)  # Adjust range if needed
 toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, LUT_SIZE)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
 def evaluate(individual):
     global tests
     send_lut(list(individual))
@@ -72,8 +68,9 @@ def load_state():
 
 def save_best(best):
     global BEST_FILE
-    with open(BEST_FILE, "w") as f:
-        json.dump(best, f)
+    global starting_rpm
+    with open("best_lut"+"rpm"+str(starting_rpm)+".json", "w") as f:# you cant change the rpm during the run.
+        json.dump(list(best), f)
 
 
 def main():
