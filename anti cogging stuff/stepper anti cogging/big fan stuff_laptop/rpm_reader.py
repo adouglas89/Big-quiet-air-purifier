@@ -9,6 +9,6 @@ def read_rpm(port="COM12", baudrate= 1_000_000):#it will sit there and do nothin
         val = float(line)
         print(val)
         return val # Convert to float and return
-# if __name__ == "__main__":
-#     read_rpm()
+if __name__ == "__main__":
+    read_rpm()
     

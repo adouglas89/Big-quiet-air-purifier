@@ -10,18 +10,12 @@ from rpm_reader import read_rpm
 from lutsender2_done_stepper import send_lut
 
 starting_rpm = read_rpm() #it's actually rads per second oh well
-best_so_far_obj = 1_000_000
 def obj_func(lut, mic, rpm): # lut is in the form of a list.
     global starting_rpm
-    global best_so_far_obj
     dc_pen = abs(np.mean(lut))*500
     print("dc_pen:", dc_pen)
     value = (mic)*10+dc_pen # mic minus X is because it reads 4366 when quiet so reduce noise by subtracting that, check the values are reasonabl efor this linerpm is minus because it's going that direction but minus a negative. The lut sum term is to try to reduce any tendency to produce a net voltage offset/keep it to the minimum mods.
     print("obj func evaluates to:",value)
-    if value < best_so_far_obj:
-        save_best2(lut,value)
-        print("best so far!")
-        best_so_far_obj = value
     return value
 tests = 0
 # Constants
@@ -50,7 +44,7 @@ def evaluate(individual):
     return obj_func(list(individual),mic, rpm),
 
 toolbox.register("mate", tools.cxTwoPoint)
-toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.5, indpb=0.1)
+toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=0.25)
 toolbox.register("select", tools.selTournament, tournsize=3)
 toolbox.register("evaluate", evaluate)
 
@@ -63,60 +57,15 @@ def save_state(population, gen, best):
     with open(STATE_FILE, "w") as f:
         json.dump(state, f)
 
-def load_state():
+def load_lut():
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE, "r") as f:
             state = json.load(f)
-        return state["generation"], [creator.Individual(ind) for ind in state["population"]], state["best"]
-    return 0, None, None
+        return state["best"]
 
-def save_best2(best,score):
-    global starting_rpm
-    with open("best_lut2"+"rpm"+str(starting_rpm)+"s"+str(score)+".json", "w") as f:# you cant change the rpm during the run.
-        json.dump(list(best), f)
-        
-def save_best(best):
-    global starting_rpm
-    with open("best_lut"+"rpm"+str(starting_rpm)+".json", "w") as f:# you cant change the rpm during the run.
-        json.dump(list(best), f)
+lut=load_lut()
+print(lut)
 
 
-def main():
-    gen, population, best_lut = load_state()
-    if population is None:
-        population = toolbox.population(n=POP_SIZE)
 
-    best_ind = creator.Individual(best_lut) if best_lut else None
-
-    hall_of_fame = tools.HallOfFame(1)
-    if best_ind:
-        hall_of_fame.insert(best_ind)
-
-    start_time = time.time()
-    try:
-        while True:
-            offspring = algorithms.varAnd(population, toolbox, CXPB, MUTPB)
-            fits = list(map(toolbox.evaluate, offspring))
-            for ind, fit in zip(offspring, fits):
-                ind.fitness.values = fit
-
-            population = toolbox.select(offspring, k=POP_SIZE)
-            hall_of_fame.update(population)
-
-            if best_ind is None or hall_of_fame[0].fitness.values < best_ind.fitness.values:
-                best_ind = creator.Individual(hall_of_fame[0])
-                save_best(best_ind)
-
-            if time.time() - start_time > 300:  # Save every 5 minutes
-                save_state(population, gen, best_ind)
-                start_time = time.time()
-
-            gen += 1  # Increment generation counter
-            print("gen: ",gen)
-    except KeyboardInterrupt:
-        print("\nOptimization interrupted. Saving state...")
-        save_state(population, gen, best_ind)
-        print("State saved. Exiting.")
-if __name__ == "__main__":
-    main()
 

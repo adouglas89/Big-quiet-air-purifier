@@ -1,13 +1,9 @@
 import json
 import numpy as np
 
-def generate_lut(filename="lut.json", size=1000, amplitude=8.0):
+def generate_lut(filename="test_lut.json", size=200, amplitude=0.25):
     # Create a sine wave LUT
     lut = [amplitude * np.sin(2 * np.pi * i / size) for i in range(size)]
-    
-    # Save to JSON file
-    multiplier = 45.0
-    lut.append(multiplier)
     with open(filename, "w") as file:
         json.dump(lut, file, indent=4)
     

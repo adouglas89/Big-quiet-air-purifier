@@ -9,8 +9,9 @@ FILE_DESCRIPTION(
 /* implementation_level */ '2;1');
 
 FILE_NAME(
-/* name */ 'secondary_thickened_16holes_combinedfromstep v2.step',
-/* time_stamp */ '2025-08-19T15:15:11-04:00',
+/* name */ 
+'secondary_thickened_16holes_combinedfromstep (v2~recovered).step',
+/* time_stamp */ '2025-10-17T10:48:03-04:00',
 /* author */ (''),
 /* organization */ (''),
 /* preprocessor_version */ 'ST-DEVELOPER v20.1',
@@ -104964,15 +104965,15 @@ SOLID_ANGLE_UNIT()
 #70236=SHAPE_REPRESENTATION('',(#7255),#70224);
 #70237=PRODUCT_DEFINITION_CONTEXT('part definition',#70245,'design');
 #70238=PRODUCT_DEFINITION(
-'secondary_thickened_16holes_combinedfromstep',
-'secondary_thickened_16holes_combinedfromstep v2',#70240,#70237);
+'secondary_thickened_16holes_combinedfromstep (v2~recovered)',
+'secondary_thickened_16holes_combinedfromstep (v2~recovered)',#70240,#70237);
 #70239=PRODUCT_DEFINITION('bqap_bqfb_num_10 (v4~recovered)',
 'thickenedsecondary_-2_littleissuesfixed v1',#70241,#70237);
 #70240=PRODUCT_DEFINITION_FORMATION('',$,#70247);
 #70241=PRODUCT_DEFINITION_FORMATION('',$,#70248);
 #70242=PRODUCT_RELATED_PRODUCT_CATEGORY(
-'secondary_thickened_16holes_combinedfromstep v2',
-'secondary_thickened_16holes_combinedfromstep v2',(#70247));
+'secondary_thickened_16holes_combinedfromstep (v2~recovered)',
+'secondary_thickened_16holes_combinedfromstep (v2~recovered)',(#70247));
 #70243=PRODUCT_RELATED_PRODUCT_CATEGORY(
 'thickenedsecondary_-2_littleissuesfixed v1',
 'thickenedsecondary_-2_littleissuesfixed v1',(#70248));
@@ -104981,8 +104982,9 @@ SOLID_ANGLE_UNIT()
 #70245=APPLICATION_CONTEXT(
 'Core Data for Automotive Mechanical Design Process');
 #70246=PRODUCT_CONTEXT('part definition',#70245,'mechanical');
-#70247=PRODUCT('secondary_thickened_16holes_combinedfromstep',
-'secondary_thickened_16holes_combinedfromstep v2',$,(#70246));
+#70247=PRODUCT(
+'secondary_thickened_16holes_combinedfromstep (v2~recovered)',
+'secondary_thickened_16holes_combinedfromstep (v2~recovered)',$,(#70246));
 #70248=PRODUCT('bqap_bqfb_num_10 (v4~recovered)',
 'thickenedsecondary_-2_littleissuesfixed v1',$,(#70246));
 #70249=PRESENTATION_STYLE_ASSIGNMENT((#70251));

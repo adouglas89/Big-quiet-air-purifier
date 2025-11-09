@@ -6,23 +6,25 @@ from time import sleep
 import numpy as np
 from scipy.interpolate import CubicSpline
 from mic_reader2 import listen_mic
+from rpm_reader import read_rpm
 
 def smooth_waveform(approx_waveform):
-    # Number of input points (50) and desired output points (1000)
-    num_approx_points = len(approx_waveform)
-    num_output_points = 200
+#     # Number of input points (50) and desired output points (1000)
+#     num_approx_points = len(approx_waveform)
+#     num_output_points = 200
+#     
+#     # Generate an array of x-values for the original data (0 to 1 range)
+#     x_approx = np.linspace(0, 1, num_approx_points)
+#     
+#     # Generate an array of x-values for the interpolated data (also 0 to 1, but with 1000 points)
+#     x_output = np.linspace(0, 1, num_output_points)
+#     
+#     # Perform cubic spline interpolation
+#     spline = CubicSpline(x_approx, approx_waveform)
+#     smooth_waveform = spline(x_output)
     
-    # Generate an array of x-values for the original data (0 to 1 range)
-    x_approx = np.linspace(0, 1, num_approx_points)
-    
-    # Generate an array of x-values for the interpolated data (also 0 to 1, but with 1000 points)
-    x_output = np.linspace(0, 1, num_output_points)
-    
-    # Perform cubic spline interpolation
-    spline = CubicSpline(x_approx, approx_waveform)
-    smooth_waveform = spline(x_output)
-    
-    return smooth_waveform
+    #return smooth_waveform
+    return approx_waveform
 def calculate_checksum(float_bytes):
     checksum = 0
     for b in float_bytes:
@@ -45,7 +47,7 @@ def wait_for_ack(ser):
 
 def send_lut(lut):
     lut = smooth_waveform(lut)
-    lut = lut.tolist()
+    #lut = lut.tolist() # commented out when upping from smoothed 50 points to 200 points natively because it's already a list.
     num_values = len(lut)
     with serial.Serial('COM12', 1000000, timeout=2) as ser:
         print("Starting transfer...")
@@ -69,8 +71,10 @@ def send_lut(lut):
          json.dump(lut, file)
     return lut
 if __name__ == "__main__":    #not clear this works this is so it doesn't run on import, but you can run this file to test it directly.
-    with open("best_lut.json", "r") as file:
+    with open("best_lut2rpm11.2s463594.5926781562.json", "r") as file:
         lut = json.load(file)
     send_lut(lut)
     while True:
+        send_lut(lut)
         listen_mic()
+        read_rpm()

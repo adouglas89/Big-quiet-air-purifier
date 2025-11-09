@@ -10,22 +10,19 @@ from rpm_reader import read_rpm
 from lutsender2_done_stepper import send_lut
 
 starting_rpm = read_rpm() #it's actually rads per second oh well
-best_so_far_obj = 1_000_000
 def obj_func(lut, mic, rpm): # lut is in the form of a list.
-    global starting_rpm
-    global best_so_far_obj
-    dc_pen = abs(np.mean(lut))*500
+    dc_pen = 0
+    for i in lut:
+        dc_pen += i
+    dc_pen = abs(dc_pen)
     print("dc_pen:", dc_pen)
-    value = (mic)*10+dc_pen # mic minus X is because it reads 4366 when quiet so reduce noise by subtracting that, check the values are reasonabl efor this linerpm is minus because it's going that direction but minus a negative. The lut sum term is to try to reduce any tendency to produce a net voltage offset/keep it to the minimum mods.
+    print("mic: ",mic)
+    value = mic*10+dc_pen*10 #check the values are reasonabl efor this linerpm is minus because it's going that direction but minus a negative. The lut sum term is to try to reduce any tendency to produce a net voltage offset/keep it to the minimum mods.
     print("obj func evaluates to:",value)
-    if value < best_so_far_obj:
-        save_best2(lut,value)
-        print("best so far!")
-        best_so_far_obj = value
     return value
 tests = 0
 # Constants
-LUT_SIZE = 200
+LUT_SIZE = 50
 POP_SIZE = 10
 CXPB, MUTPB = 0.5, 0.2  # Crossover & mutation probabilities
 GENS = 1000
@@ -50,7 +47,7 @@ def evaluate(individual):
     return obj_func(list(individual),mic, rpm),
 
 toolbox.register("mate", tools.cxTwoPoint)
-toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.5, indpb=0.1)
+toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.1)
 toolbox.register("select", tools.selTournament, tournsize=3)
 toolbox.register("evaluate", evaluate)
 
@@ -70,12 +67,8 @@ def load_state():
         return state["generation"], [creator.Individual(ind) for ind in state["population"]], state["best"]
     return 0, None, None
 
-def save_best2(best,score):
-    global starting_rpm
-    with open("best_lut2"+"rpm"+str(starting_rpm)+"s"+str(score)+".json", "w") as f:# you cant change the rpm during the run.
-        json.dump(list(best), f)
-        
 def save_best(best):
+    global BEST_FILE
     global starting_rpm
     with open("best_lut"+"rpm"+str(starting_rpm)+".json", "w") as f:# you cant change the rpm during the run.
         json.dump(list(best), f)
